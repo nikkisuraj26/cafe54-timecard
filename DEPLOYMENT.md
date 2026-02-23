@@ -81,6 +81,9 @@ Open browser: `http://localhost:5000`
 
 #### Step 3: Deploy Backend on Render
 1. Push your code to GitHub (if not already)
+git remote add origin https://github.com/nikkisuraj26/cafe54-timecard.git
+git branch -M main
+git push -u origin main
 2. Dashboard → New → Web Service
 3. Connect your GitHub repository
 4. Configure:
