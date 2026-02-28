@@ -9,7 +9,7 @@ A responsive, cloud-based timecard management system for Cafe 54. Track employee
 - **Week-by-Week Reporting**: Generate reports for any week, view all employee hours, calculate totals
 - **Responsive Design**: Works seamlessly on desktop, tablet, and mobile devices
 - **Multi-Device Access**: Access your data from any device using a single URL
-- **Data Persistence**: All data stored in cloud database, survives browser cache clears
+- **Data Persistence**: *In-memory only* – data exists for the current session and is lost when the server restarts
 - **Print Functionality**: Print individual timecards and reports
 
 ## 🚀 Quick Start
@@ -20,10 +20,7 @@ A responsive, cloud-based timecard management system for Cafe 54. Track employee
 cd backend
 npm install
 
-# Create .env file with your PostgreSQL connection
-cp .env.example .env
-
-# Start the server
+# Start the server (no database required)
 npm start
 ```
 
@@ -41,10 +38,10 @@ See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed instructions to deploy on:
 |-------|-----------|
 | Frontend | HTML5, CSS3, Vanilla JavaScript |
 | Backend | Node.js, Express.js |
-| Database | PostgreSQL |
+| Database | In-memory (no persistence) |
 | Hosting | Render.com / Railway.app (Free) |
 
-## 📊 API Endpoints
+## 📊 API Endpoints (memory-backed)
 
 ```
 GET    /api/employees              - List all employees
@@ -77,19 +74,8 @@ TIMECARD/
 └── README.md           - This file
 ```
 
-## 💾 Database Schema
-
-**employees**
-- id (primary key)
-- name (unique)
-- created_at
-
-**timesheets**
-- id (primary key)
-- employee_id (foreign key)
-- week_period (e.g., "Jan 1 - Jan 7")
-- total_minutes
-- date_saved
+## 💾 Data Storage
+This app no longer uses a database; all information is kept in a simple in‑memory store. Data will reset when the server process restarts.
 
 ## 🔒 Notes
 

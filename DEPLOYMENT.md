@@ -4,7 +4,7 @@
 This is a complete, responsive, cloud-based timecard management system using:
 - **Frontend**: HTML, CSS, JavaScript (responsive for all devices)
 - **Backend**: Node.js + Express
-- **Database**: PostgreSQL
+- **Database**: None (in-memory only)
 - **Hosting**: Free tier services
 
 ## Project Structure
@@ -26,35 +26,19 @@ TIMECARD/
 
 ### Prerequisites
 - Node.js (v14 or higher)
-- PostgreSQL installed locally
 
-### Step 1: Setup PostgreSQL Locally
-1. Install PostgreSQL from https://www.postgresql.org/download/
-2. Create a new database:
-   ```sql
-   CREATE DATABASE cafe54_timecard;
-   ```
+*(No database installation required; the app runs purely in memory.)*
 
-### Step 2: Setup Backend
+### Step 1: Setup Backend
 ```bash
 cd backend
 npm install
-```
 
-### Step 3: Configure Environment
-Create `.env` file in `backend/` folder:
-```
-DATABASE_URL=postgresql://username:password@localhost:5432/cafe54_timecard
-PORT=5000
-NODE_ENV=development
-```
-
-Replace `username` and `password` with your PostgreSQL credentials.
-
-### Step 4: Start Server
-```bash
+# Start the server (no database connection needed)
 npm start
 ```
+
+The server will run on `http://localhost:5000` and store data in memory until restarted.
 
 Server runs at: `http://localhost:5000`
 
@@ -71,19 +55,13 @@ Open browser: `http://localhost:5000`
 1. Go to https://render.com
 2. Sign up with GitHub account
 
-#### Step 2: Create PostgreSQL Database on Render
-1. Dashboard → New → PostgreSQL
-2. Name: `cafe54-db`
-3. Region: Choose closest to you
-4. PostgreSQL Version: 14 or higher
-5. Click "Create Database"
-6. Copy the Internal Database URL (looks like: `postgresql://user:pass@...`)
-
-#### Step 3: Deploy Backend on Render
+#### Step 2: Deploy Backend on Render (memory-only)
 1. Push your code to GitHub (if not already)
-git remote add origin https://github.com/nikkisuraj26/cafe54-timecard.git
-git branch -M main
-git push -u origin main
+   ```bash
+   git remote add origin https://github.com/nikkisuraj26/cafe54-timecard.git
+   git branch -M main
+   git push -u origin main
+   ```
 2. Dashboard → New → Web Service
 3. Connect your GitHub repository
 4. Configure:
@@ -92,14 +70,13 @@ git push -u origin main
    - **Build Command**: `cd backend && npm install`
    - **Start Command**: `cd backend && npm start`
    - **Environment Variables** (Add these):
-     - `DATABASE_URL`: [Paste your PostgreSQL Internal URL]
      - `PORT`: `5000`
      - `NODE_ENV`: `production`
    - **Root Directory**: (leave blank)
+5. Click "Deploy" and wait for it to finish.
+6. Copy your Render URL (e.g., `https://cafe54-timecard-api.onrender.com`).
 
-5. Click "Deploy"
-6. Wait for deployment (5-10 minutes)
-7. Copy your Render URL (e.g., `https://cafe54-timecard-api.onrender.com`)
+*No database configuration required; data will be lost on restart.*
 
 #### Step 4: Update Frontend for Production
 1. In `public/script.js`, line 2-4:
@@ -119,7 +96,7 @@ Your app is now live at: `https://cafe54-timecard-api.onrender.com`
 
 ---
 
-### Option 2: Railway.app (Also Free)
+### Option 2: Railway.app (Also Free - memory only)
 
 #### Step 1: Create Railway Account
 1. Go to https://railway.app
@@ -128,8 +105,8 @@ Your app is now live at: `https://cafe54-timecard-api.onrender.com`
 #### Step 2: Create New Project
 1. Dashboard → New Project
 2. Add services:
-   - PostgreSQL (Database)
    - GitHub Repo (Backend)
+   <!-- no database service required -->
 
 #### Step 3: Configure Backend Service
 1. Connect your GitHub repository
