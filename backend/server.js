@@ -84,7 +84,7 @@ app.post('/api/employees', async (req, res) => {
 
 // Save timesheet
 app.post('/api/timesheets', async (req, res) => {
-  const { employeeName, weekPeriod, totalMinutes } = req.body;
+  const { employeeName, weekPeriod, totalMinutes, dayDetails } = req.body;
 
   if (!employeeName || !weekPeriod || totalMinutes === undefined) {
     return res.status(400).json({ error: 'Missing required fields' });
@@ -104,14 +104,14 @@ app.post('/api/timesheets', async (req, res) => {
 
       const employeeId = empResult.rows[0].id;
 
-      // Insert or update timesheet
+      // Insert or update timesheet with optional day_details json
       const result = await pool.query(
-        `INSERT INTO timesheets (employee_id, week_period, total_minutes, date_saved)
-         VALUES ($1, $2, $3, CURRENT_TIMESTAMP)
+        `INSERT INTO timesheets (employee_id, week_period, total_minutes, day_details, date_saved)
+         VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP)
          ON CONFLICT (employee_id, week_period) 
-         DO UPDATE SET total_minutes = $3, date_saved = CURRENT_TIMESTAMP
-         RETURNING id, employee_id, week_period, total_minutes, date_saved`,
-        [employeeId, weekPeriod, totalMinutes]
+         DO UPDATE SET total_minutes = $3, day_details = $4, date_saved = CURRENT_TIMESTAMP
+         RETURNING id, employee_id, week_period, total_minutes, day_details, date_saved`,
+        [employeeId, weekPeriod, totalMinutes, dayDetails ? JSON.stringify(dayDetails) : null]
       );
 
       res.status(201).json(result.rows[0]);
@@ -123,6 +123,7 @@ app.post('/api/timesheets', async (req, res) => {
       
       if (existing) {
         existing.total_minutes = totalMinutes;
+        existing.day_details = dayDetails;
         existing.date_saved = new Date().toISOString();
       } else {
         memoryStore.timesheets.push({
@@ -130,10 +131,11 @@ app.post('/api/timesheets', async (req, res) => {
           employee_name: employeeName.trim().toUpperCase(),
           week_period: weekPeriod,
           total_minutes: totalMinutes,
+          day_details: dayDetails,
           date_saved: new Date().toISOString()
         });
       }
-      res.status(201).json({ id: Date.now(), employee_name: employeeName, week_period: weekPeriod, total_minutes: totalMinutes });
+      res.status(201).json({ id: Date.now(), employee_name: employeeName, week_period: weekPeriod, total_minutes: totalMinutes, day_details: dayDetails });
     }
   } catch (error) {
     console.error('Error saving timesheet:', error);
@@ -168,7 +170,7 @@ app.get('/api/timesheets/:weekPeriod', async (req, res) => {
   try {
     if (getConnectionStatus()) {
       const result = await pool.query(
-        `SELECT e.name as employee_name, t.week_period, t.total_minutes
+        `SELECT e.name as employee_name, t.week_period, t.total_minutes, t.day_details
          FROM timesheets t
          JOIN employees e ON t.employee_id = e.id
          WHERE t.week_period = $1
@@ -183,7 +185,8 @@ app.get('/api/timesheets/:weekPeriod', async (req, res) => {
         .map(t => ({
           employee_name: t.employee_name,
           week_period: t.week_period,
-          total_minutes: t.total_minutes
+          total_minutes: t.total_minutes,
+          day_details: t.day_details
         }))
         .sort((a, b) => a.employee_name.localeCompare(b.employee_name));
       res.json(results);

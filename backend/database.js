@@ -34,17 +34,20 @@ async function initializeDatabase() {
       );
     `);
 
-    // Create timesheets table
+    // Create timesheets table (with day_details JSONB for per-day data)
     await pool.query(`
       CREATE TABLE IF NOT EXISTS timesheets (
         id SERIAL PRIMARY KEY,
         employee_id INTEGER NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
         week_period VARCHAR(50) NOT NULL,
         total_minutes INTEGER NOT NULL,
+        day_details JSONB,
         date_saved TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         UNIQUE(employee_id, week_period)
       );
     `);
+    // ensure existing table has the column (schema migrations)
+    await pool.query(`ALTER TABLE timesheets ADD COLUMN IF NOT EXISTS day_details JSONB;`);
 
     isConnected = true;
     console.log('✓ Database tables initialized successfully');

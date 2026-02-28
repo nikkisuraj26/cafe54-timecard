@@ -90,7 +90,7 @@ const employeeManager = new EmployeeManager();
 // =====================
 
 class TimesheetManager {
-    async saveTimesheet(employeeName, weekPeriod, totalMinutes) {
+    async saveTimesheet(employeeName, weekPeriod, totalMinutes, dayDetails) {
         try {
             const response = await fetch(`${API_BASE}/timesheets`, {
                 method: 'POST',
@@ -98,7 +98,8 @@ class TimesheetManager {
                 body: JSON.stringify({
                     employeeName: employeeName.trim().toUpperCase(),
                     weekPeriod: weekPeriod,
-                    totalMinutes: totalMinutes
+                    totalMinutes: totalMinutes,
+                    dayDetails: dayDetails
                 })
             });
 
@@ -331,6 +332,18 @@ function formatTimeDisplay(totalMinutes) {
     }
 }
 
+// Format a detail object into a human-readable start-end string
+function formatTimeRange(detail) {
+    if (!detail) return '';
+    const {
+        startHour, startMinute, startAmpm,
+        endHour, endMinute, endAmpm
+    } = detail;
+    if (!startHour || !endHour) return '';
+    const pad = (n) => n.toString().padStart(2, '0');
+    return `${pad(startHour)}:${pad(startMinute)} ${startAmpm} - ${pad(endHour)}:${pad(endMinute)} ${endAmpm}`;
+}
+
 function calculateDayTotal(dayIndex) {
     const row = timecardBody.children[dayIndex];
     const startHour = parseInt(row.querySelector('.start-hour').value) || 0;
@@ -440,6 +453,33 @@ async function saveTimesheet() {
         return;
     }
     
+    // build day details array along with minutes
+    const dayDetails = [];
+    days.forEach((day, index) => {
+        const row = timecardBody.children[index];
+        const startHour = parseInt(row.querySelector('.start-hour').value) || 0;
+        const startMinute = parseInt(row.querySelector('.start-minute').value) || 0;
+        const startAmpm = row.querySelector('.start-ampm').value;
+        const endHour = parseInt(row.querySelector('.end-hour').value) || 0;
+        const endMinute = parseInt(row.querySelector('.end-minute').value) || 0;
+        const endAmpm = row.querySelector('.end-ampm').value;
+        const breakDeductionHours = parseFloat(row.querySelector('.break-deduction').value) || 0;
+        const minutes = calculateMinutes(startHour, startMinute, startAmpm, endHour, endMinute, endAmpm);
+        const breakMinutes = breakDeductionHours * 60;
+        const finalMinutes = Math.max(0, minutes - breakMinutes);
+        dayDetails.push({
+            day: day,
+            startHour,
+            startMinute,
+            startAmpm,
+            endHour,
+            endMinute,
+            endAmpm,
+            breakDeductionHours,
+            totalMinutes: finalMinutes
+        });
+    });
+    
     const totalMinutes = calculateAll();
     
     if (totalMinutes === 0) {
@@ -449,7 +489,7 @@ async function saveTimesheet() {
     
     try {
         showLoadingSpinner(true);
-        await timesheetManager.saveTimesheet(employeeName, weekPeriod, totalMinutes);
+        await timesheetManager.saveTimesheet(employeeName, weekPeriod, totalMinutes, dayDetails);
         await populateWeekPeriodDropdown();
         alert('Timesheet saved successfully!');
     } catch (error) {
@@ -495,13 +535,33 @@ async function generateReport() {
         
         let grandTotalMinutes = 0;
         
+        // build roster data structure
+        const rosterByDay = days.map(() => []);
+
         timesheets.forEach(timesheet => {
             const row = document.createElement('tr');
-            row.innerHTML = `
+            // create cells for each weekday
+            let cells = `
                 <td>${timesheet.employee_name}</td>
                 <td>${timesheet.week_period}</td>
-                <td>${formatTimeDisplay(timesheet.total_minutes)}</td>
             `;
+            if (timesheet.day_details && Array.isArray(timesheet.day_details)) {
+                timesheet.day_details.forEach((detail, idx) => {
+                    cells += `<td>${formatTimeDisplay(detail.totalMinutes || detail.total_minutes || 0)}</td>`;
+                    // add to roster entry if time exists
+                    if ((detail.totalMinutes || detail.total_minutes) > 0) {
+                        const start = formatTimeRange(detail);
+                        rosterByDay[idx].push(`${timesheet.employee_name} ${start}`);
+                    }
+                });
+            } else {
+                // fallback: no detail data
+                days.forEach(() => {
+                    cells += `<td>-</td>`;
+                });
+            }
+            cells += `<td>${formatTimeDisplay(timesheet.total_minutes)}</td>`;
+            row.innerHTML = cells;
             reportBody.appendChild(row);
             grandTotalMinutes += timesheet.total_minutes;
         });
@@ -509,6 +569,18 @@ async function generateReport() {
         document.getElementById('report-grand-total').innerHTML = `<strong>${formatTimeDisplay(grandTotalMinutes)}</strong>`;
         document.getElementById('report-section').style.display = 'block';
         
+        // build roster row
+        const rosterBody = document.getElementById('roster-body');
+        rosterBody.innerHTML = '';
+        const rosterRow = document.createElement('tr');
+        let rosterCells = `<td>${selectedWeekPeriod}</td>`;
+        rosterByDay.forEach(dayList => {
+            rosterCells += `<td>${dayList.join('<br>')}</td>`;
+        });
+        rosterRow.innerHTML = rosterCells;
+        rosterBody.appendChild(rosterRow);
+        document.getElementById('roster-section').style.display = 'block';
+
         document.querySelector('.report-container').scrollIntoView({ behavior: 'smooth' });
     } catch (error) {
         alert('Error generating report: ' + error.message);
@@ -540,6 +612,35 @@ function printReport() {
                 <h2>Timesheet Report</h2>
                 <p><strong>Week Period:</strong> ${selectedWeekPeriod}</p>
                 ${reportSection.innerHTML}
+            </body>
+        </html>
+    `);
+    printWindow.document.close();
+    printWindow.print();
+}
+
+function printRoster() {
+    const printWindow = window.open('', '_blank');
+    const rosterSection = document.getElementById('roster-section').cloneNode(true);
+    const selectedWeekPeriod = document.getElementById('report-week-period').value;
+
+    printWindow.document.write(`
+        <html>
+            <head>
+                <title>Roster Chart - ${selectedWeekPeriod}</title>
+                <style>
+                    body { font-family: Arial, sans-serif; padding: 20px; }
+                    h2, h3 { color: #333; }
+                    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                    th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+                    th { background-color: #667eea; color: white; }
+                    .btn { display: none; }
+                </style>
+            </head>
+            <body>
+                <h3>Roster Chart</h3>
+                <p><strong>Week Period:</strong> ${selectedWeekPeriod}</p>
+                ${rosterSection.innerHTML}
             </body>
         </html>
     `);

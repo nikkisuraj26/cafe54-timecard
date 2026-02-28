@@ -91,9 +91,7 @@
             <button class="btn btn-save" onclick="saveTimesheet()">
                 💾 SAVE
             </button>
-            <button class="btn btn-print" onclick="printTimecard()">
-                🖨️ PRINT
-            </button>
+            <!-- print button removed from main actions; only available in report section -->
             <button class="btn btn-clear" onclick="clearAll()">
                 ✕ CLEAR
             </button>
@@ -126,6 +124,13 @@
                         <tr>
                             <th>Employee Name</th>
                             <th>Week Period</th>
+                            <th>Monday</th>
+                            <th>Tuesday</th>
+                            <th>Wednesday</th>
+                            <th>Thursday</th>
+                            <th>Friday</th>
+                            <th>Saturday</th>
+                            <th>Sunday</th>
                             <th>Total Hours</th>
                         </tr>
                     </thead>
@@ -133,7 +138,7 @@
                     </tbody>
                     <tfoot>
                         <tr class="report-total-row">
-                            <td colspan="2"><strong>Total</strong></td>
+                            <td colspan="9"><strong>Total</strong></td>
                             <td id="report-grand-total"><strong>0 hrs 0 minutes</strong></td>
                         </tr>
                     </tfoot>
@@ -142,6 +147,34 @@
             <div class="report-actions">
                 <button class="btn btn-print" onclick="printReport()">
                     🖨️ PRINT REPORT
+                </button>
+            </div>
+        </div>
+
+        <!-- Roster section -->
+        <div id="roster-section" style="display: none;">
+            <h3 class="report-title">Roster Chart</h3>
+            <div class="table-wrapper">
+                <table class="report-table roster-table">
+                    <thead>
+                        <tr>
+                            <th>Week Period</th>
+                            <th>Monday</th>
+                            <th>Tuesday</th>
+                            <th>Wednesday</th>
+                            <th>Thursday</th>
+                            <th>Friday</th>
+                            <th>Saturday</th>
+                            <th>Sunday</th>
+                        </tr>
+                    </thead>
+                    <tbody id="roster-body">
+                    </tbody>
+                </table>
+            </div>
+            <div class="report-actions">
+                <button class="btn btn-print" onclick="printRoster()">
+                    🖨️ PRINT ROSTER
                 </button>
             </div>
         </div>
